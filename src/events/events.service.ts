@@ -6,24 +6,14 @@ import { Event } from './event.model';
 
 @Injectable()
 export class EventsService {
-  private events: Event[] = [];
-
   constructor(
     @InjectModel('Event') private readonly eventModel: Model<Event>,
   ) {}
 
-  async insertEvent(title: string, desc: string, price: number) {
-    // const eveId = new Date().toString();
-    // const { v4: uuidv4 } = require('uuid');
-    // const eveId = uuidv4();
-
-    const newEvent = new this.eventModel({
-      title,
-      description: desc,
-      price,
-    });
+  async insertEvent(eventData: Event): Promise<string> {
+    const newEvent = new this.eventModel(eventData);
+    // newEvent.createdAt =
     const result = await newEvent.save();
-    console.log(result);
     return result.id as string;
   }
 
@@ -33,45 +23,51 @@ export class EventsService {
       id: eve.id,
       title: eve.title,
       description: eve.description,
-      price: eve.price,
+      status: eve.status,
+      createdAt: eve.createdAt,
+      updatedAt: eve.updatedAt,
+      startTime: eve.startTime,
+      endTime: eve.endTime,
+      invitees: eve.invitees,
     }));
   }
 
   async getSingleEvent(eventId: string) {
     const event = await this.findEvent(eventId);
-    return {
-      id: event.id,
-      title: event.title,
-      description: event.description,
-      price: event.price,
-    };
+    return event; // Return the entire event object
   }
 
-  async updateEvent(
-    eventId: string,
-    title: string,
-    desc: string,
-    price: number,
-  ) {
+  async updateEvent(eventId: string, eventData: Partial<Event>) {
     const updatedEvent = await this.findEvent(eventId);
-    if (title) {
-      updatedEvent.title = title;
+
+    if (eventData.title) {
+      updatedEvent.title = eventData.title;
     }
-    if (desc) {
-      updatedEvent.description = desc;
+    if (eventData.description) {
+      updatedEvent.description = eventData.description;
     }
-    if (price) {
-      updatedEvent.price = price;
+    if (eventData.status) {
+      updatedEvent.status = eventData.status;
     }
-    updatedEvent.save();
+    if (eventData.startTime) {
+      updatedEvent.startTime = eventData.startTime;
+    }
+    if (eventData.endTime) {
+      updatedEvent.endTime = eventData.endTime;
+    }
+    if (eventData.invitees) {
+      updatedEvent.invitees = eventData.invitees;
+    }
+
+    updatedEvent.updatedAt = new Date();
+    await updatedEvent.save();
   }
 
-  async deleteEvent(eveId: string) {
-    const result = await this.eventModel.deleteOne({ _id: eveId }).exec();
+  async deleteEvent(eventId: string) {
+    const result = await this.eventModel.deleteOne({ _id: eventId }).exec();
     if (result.deletedCount === 0) {
       throw new NotFoundException('Could not find event.');
     }
-    // console.log(result);
   }
 
   private async findEvent(id: string): Promise<Event> {

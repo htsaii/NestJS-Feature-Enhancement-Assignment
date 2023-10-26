@@ -7,6 +7,7 @@ import {
   Patch,
   Delete,
 } from '@nestjs/common';
+import { Event } from './event.model'; // Import the Event type from your model
 import { EventsService } from './events.service';
 
 @Controller('events')
@@ -14,16 +15,12 @@ export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
   @Post()
-  async addEvents(
-    @Body('title') eveTitle: string,
-    @Body('description') eveDesc: string,
-    @Body('price') evePrice: number,
-  ) {
-    const generatedId = await this.eventsService.insertEvent(
-      eveTitle,
-      eveDesc,
-      evePrice,
-    );
+  async addEvent(@Body() eventData: Event) {
+    // add the current time to the event data
+    eventData.createdAt = new Date();
+    eventData.updatedAt = new Date();
+
+    const generatedId = await this.eventsService.insertEvent(eventData);
     return { id: generatedId };
   }
 
@@ -41,11 +38,11 @@ export class EventsController {
   @Patch(':id')
   async updateEvent(
     @Param('id') eveId: string,
-    @Body('title') eveTitle: string,
-    @Body('description') eveDesc: string,
-    @Body('price') evePrice: number,
+    @Body() eventData: Partial<Event>,
   ) {
-    await this.eventsService.updateEvent(eveId, eveTitle, eveDesc, evePrice);
+    // update the current time to the event data
+    eventData.updatedAt = new Date();
+    await this.eventsService.updateEvent(eveId, eventData);
     return null;
   }
 
