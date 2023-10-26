@@ -35,6 +35,12 @@ export class EventsController {
     return this.eventsService.getSingleEvent(eveId);
   }
 
+  @Patch()
+  async mergeEvent() {
+    await this.eventsService.mergeAll();
+    return null;
+  }
+
   @Patch(':id')
   async updateEvent(
     @Param('id') eveId: string,

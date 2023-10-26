@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-
 import { Event } from './event.model';
 
 @Injectable()
@@ -81,5 +80,38 @@ export class EventsService {
       throw new NotFoundException('Could not find Event.');
     }
     return event;
+  }
+
+  async mergeAll() {
+    const events = await this.getEvents();
+    events.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+    console.log(events);
+    let currentEvent: Event | null = null;
+
+    for (const event of events) {
+      if (!currentEvent) {
+        // First event
+        currentEvent = new this.eventModel(event);
+      } else if (event.startTime <= currentEvent.endTime) {
+        // Overlapping event, merge with current event
+        currentEvent.endTime = new Date(
+          Math.max(currentEvent.endTime.getTime(), event.endTime.getTime()),
+        );
+        currentEvent.invitees.push(...event.invitees);
+      } else {
+        // Non-overlapping event, add current event to merged events and start a new current event
+        await this.insertEvent(currentEvent);
+        currentEvent = new this.eventModel(event);
+      }
+      console.log(event.id);
+      await this.deleteEvent(event.id);
+    }
+
+    // Add last current event to merged events
+    if (currentEvent) {
+      await this.insertEvent(currentEvent);
+    }
+
+    return await this.getEvents();
   }
 }
