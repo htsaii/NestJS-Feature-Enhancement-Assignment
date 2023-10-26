@@ -18,6 +18,7 @@ export class EventsService {
 
   async getEvents() {
     const events = await this.eventModel.find().exec();
+    events.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
     return events.map((eve) => ({
       id: eve.id,
       title: eve.title,
@@ -84,8 +85,8 @@ export class EventsService {
 
   async mergeAll() {
     const events = await this.getEvents();
-    events.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
-    console.log(events);
+    // events.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+    // console.log(events);
     let currentEvent: Event | null = null;
 
     for (const event of events) {
@@ -97,13 +98,18 @@ export class EventsService {
         currentEvent.endTime = new Date(
           Math.max(currentEvent.endTime.getTime(), event.endTime.getTime()),
         );
-        currentEvent.invitees.push(...event.invitees);
+        for (const invitee of event.invitees) {
+          if (!currentEvent.invitees.find((i) => i === invitee)) {
+            currentEvent.invitees.push(invitee);
+          }
+        }
       } else {
         // Non-overlapping event, add current event to merged events and start a new current event
+        currentEvent.invitees.sort();
         await this.insertEvent(currentEvent);
         currentEvent = new this.eventModel(event);
       }
-      console.log(event.id);
+      // console.log(event.id);
       await this.deleteEvent(event.id);
     }
 
