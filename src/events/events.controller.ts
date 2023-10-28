@@ -54,7 +54,7 @@ export class EventsController {
 
   @Delete(':id')
   async removeEvent(@Param('id') eveId: string) {
-    await this.eventsService.deleteEvent(eveId);
-    return null;
+    const result = await this.eventsService.deleteEvent(eveId);
+    return result;
   }
 }
